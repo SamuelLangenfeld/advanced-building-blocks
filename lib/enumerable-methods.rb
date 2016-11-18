@@ -20,6 +20,7 @@ module Enumerable
 				yield(my_array[i][0],my_array[i][1])
 				i+=1
 			end
+			return self
 		end
 	end
 
@@ -53,13 +54,13 @@ module Enumerable
 		
 		elsif self.instance_of? Hash
 			
-			new_hash=[]
+			new_hash={}
 			new_array=self.to_a
 			i=0
 			while i<new_array.length
 				
 				if yield(new_array[i][0], new_array[i][1])
-					new_hash.push([new_array[i][0],new_array[i][1]])
+					new_hash.store(new_array[i][0],new_array[i][1])
 				end
 				i+=1
 			end
@@ -74,37 +75,66 @@ module Enumerable
 	
 
 
-	def my_all
+	def my_all?
 		return enum_for(:my_all) unless block_given?
-		test=true
-		self.my_each do |i|
-			if !(yield(i))
-				test=false
-				return test
+
+		if self.instance_of? Array
+			self.my_each do |i|
+				if !(yield(i))
+					return false
+				end
 			end
+			return true
+		elsif self.instance_of? Hash
+			self.my_each do |k,v|
+				if !yield(k,v)
+					return false
+				end
+			end
+			return true
 		end
 	end
 
 	def my_any?
 		return enum_for(:my_any) unless block_given?
-		test=false
-		self.my_each do |i|
-			if yield(i)
-				test=true
-				return test
+
+		if self.instance_of? Array
+			self.my_each do |i|
+				if yield(i)
+					return true
+				end
 			end
+			return false
+
+		elsif self.instance_of? Hash
+			self.my_each do |k, v|	
+				if yield(k, v)
+					return true
+				end
+			end
+			return false
 		end
 	end
 
 	def my_none?
 		return enum_for(:my_none) unless block_given?
-		
-		self.my_any? do |i|
-			if yield(i)
-				return false
+
+		if self.instance_of? Array		
+			self.my_any? do |i|
+				if yield(i)
+					return false
+				end
 			end
+			return true
+		elsif self.instance_of? Hash
+			self.my_any? do |k,v|
+				if yield(k,v)
+					return false
+				end
+			end
+			return true
 		end
-		return true
+				
 	end
 
 
@@ -214,15 +244,29 @@ module Enumerable
 	
 	def my_inject(initial=nil)
 		return enum_for(:my_inject) unless block_given?
-		total=initial
-		self.my_each do |i|
-			if total
-				total=yield(total, i)
-			else
-				total=self.first
+
+
+		if self.instance_of? Hash
+			obj=self.to_a
+			obj.my_each do |i|
+				if initial
+					initial=yield(initial, i)
+				else
+					initial=obj.first
+				end
 			end
+		
+			return initial
+		else
+			self.my_each do |i|
+				if initial
+					initial=yield(initial, i)
+				else
+					initial=self.first
+				end
+			end
+			return initial
 		end
-		return total
 
 
 	end
